@@ -1,4 +1,4 @@
-pit-stop-maker
-==============
+PitStopMaker201
+===============
 
-A software based on java that help to edit files of the game rFactor.
+An application based on java that help to edit files for the Rfactor Game.
