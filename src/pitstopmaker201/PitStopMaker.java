@@ -29,14 +29,13 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 public class PitStopMaker extends javax.swing.JFrame {
-    //<editor-fold defaultstate="collapsed" desc="Propiedades">
-
+    //<editor-fold defaultstate="collapsed" desc="Propiedades"
     private LinkedList<Categoria> categorias;
     private String ruta;
     private RfTemporada temporadas;
     private List<Piloto> pilotos;
-    private DefaultListModel listadrivers;
-    private DefaultListModel listateams;
+    private DefaultListModel listDriversModel;
+    private DefaultListModel listaTeamsModel;
     private List<Track> tracksList;
     private String rutaCategoriaActual;
     private String temporadaActual;
@@ -51,8 +50,8 @@ public class PitStopMaker extends javax.swing.JFrame {
         this.categorias = new LinkedList<>();
         this.temporadas = new RfTemporada();
         this.pilotos = new ArrayList();
-        this.listadrivers = new DefaultListModel();
-        this.listateams = new DefaultListModel();
+        this.listDriversModel = new DefaultListModel();
+        this.listaTeamsModel = new DefaultListModel();
         this.tracksList = new ArrayList();
         this.rutaCategoriaActual = null;
     }
@@ -88,6 +87,7 @@ public class PitStopMaker extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         EditarRfactorMenuItem = new javax.swing.JMenuItem();
+        EditarF1CMenuItem = new javax.swing.JMenuItem();
         salirMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -345,6 +345,15 @@ public class PitStopMaker extends javax.swing.JFrame {
         });
         jMenu1.add(EditarRfactorMenuItem);
 
+        EditarF1CMenuItem.setText("F1 Challenge Seasons");
+        EditarF1CMenuItem.setToolTipText("");
+        EditarF1CMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                EditarF1CMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu1.add(EditarF1CMenuItem);
+
         salirMenuItem.setText("Salir");
         salirMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -396,62 +405,46 @@ public class PitStopMaker extends javax.swing.JFrame {
     //<editor-fold defaultstate="collapsed" desc="Botones y elementos graficos">    
     private void EditarRfactorMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EditarRfactorMenuItemActionPerformed
         // Codigo para el menu rFactor
-        JFileChooser ubicacion = new JFileChooser();
-        ubicacion.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        int seleccion = ubicacion.showOpenDialog(null);
-
-        if (seleccion == JFileChooser.APPROVE_OPTION) {
-            File archivo = ubicacion.getSelectedFile();
-            ruta = archivo.getAbsolutePath();
-
-            if (archivo.getName().contains("rFactor")) {
-                buscarDirectorio(ruta + "\\rFm\\", crearRegex("*.rfm"), false, true);
-                temporadaList.removeAllItems();
-
-                for (int i = 0; i < categorias.size(); i++) {
-                    temporadaList.addItem(categorias.get(i).getName());
-                }
-
-                temporadaList.setEnabled(true);
-                cargarTemporadajButton.setEnabled(true);
-            } else {
-                ImageIcon icon = new ImageIcon(getClass().getResource("Elementos/Imagenes/PitStopErrorIcon.png"));
-                JOptionPane.showMessageDialog(null, "La ruta especificada no es valida." + '\n' + "Seleccione la ruta del directorio rFactor", "PitsStop Maker 2.7.0 - ERROR", JOptionPane.ERROR_MESSAGE, icon);
-            }
-        }
+        loadDirectory("rFactor", "\\rFm\\", "*.rfm");
     }//GEN-LAST:event_EditarRfactorMenuItemActionPerformed
 
     private void cargarTemporadajButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cargarTemporadajButtonActionPerformed
         // Carga la temporada que se ha seleccionado.
         int tempIndex = temporadaList.getSelectedIndex();// se obtiene el indice en cual se encuentra la temporada
-        rutaCategoriaActual = categorias.get(tempIndex).getRuta();
-        temporadaActual = categorias.get(tempIndex).getName();
+        this.rutaCategoriaActual = categorias.get(tempIndex).getRuta();
+        this.temporadaActual = categorias.get(tempIndex).getName();
 
-        listadrivers.removeAllElements();
-        listateams.removeAllElements();
+        this.listDriversModel.removeAllElements();
+        this.listaTeamsModel.removeAllElements();
         pilotos.clear();
         pistasList.removeAll();
-        temporadas.getScenes().clear();
+        this.temporadas.getScenes().clear();
+        this.temporadas.setFullTrackList(new ArrayList());
+        
+        if(ruta.contains("F1 Challenge 99-02")){
+            leerArchivoRfm(this.rutaCategoriaActual,true);
+           buscarDirectorio(ruta.concat("\\" + this.temporadas.getVehDir()), crearRegex("*.veh"), true, false);
+        }
+        else{
+            leerArchivoRfm(this.rutaCategoriaActual,false);
+            buscarDirectorio(ruta.concat("\\" + this.temporadas.getVehDir()), crearRegex("*.veh"), true, false);
+        }
 
-        temporadas.setFullTrackList(new ArrayList());
-        leerArchivoRfm(categorias.get(tempIndex).getRuta());
-        buscarDirectorio(ruta.concat("\\" + temporadas.getVehDir()), crearRegex("*.veh"), true, false);
-
-        teamList.setModel(listateams); // aplicar el Listmodel de equipos
-        pilotosList.setModel(listadrivers); //aplicar el ListModel de pilotos
-        pistasList.setModel(temporadas.getScenes());
+        teamList.setModel(this.listaTeamsModel); // aplicar el Listmodel de equipos
+        pilotosList.setModel(this.listDriversModel); //aplicar el ListModel de pilotos
+        pistasList.setModel(this.temporadas.getScenes());
 
         for (int i = 0; i < pilotos.size(); i++) {
-            if (!listateams.contains(pilotos.get(i).getTeam())) {
-                listateams.addElement(pilotos.get(i).getTeam());
+            if (this.listaTeamsModel.contains(pilotos.get(i).getTeam())) {
+                this.listaTeamsModel.addElement(pilotos.get(i).getTeam());
             }
         }
 
         for (int i = 0; i < pilotos.size(); i++) {
             if (pilotos.get(i).getNumber() < 10) {
-                listadrivers.addElement("0" + pilotos.get(i).getNumber() + " - " + pilotos.get(i).getName());
+                this.listDriversModel.addElement("0" + pilotos.get(i).getNumber() + " - " + pilotos.get(i).getName());
             } else {
-                listadrivers.addElement(pilotos.get(i).getNumber() + " - " + pilotos.get(i).getName());
+                this.listDriversModel.addElement(pilotos.get(i).getNumber() + " - " + pilotos.get(i).getName());
             }
         }
 
@@ -548,9 +541,40 @@ public class PitStopMaker extends javax.swing.JFrame {
         // TODO add your handling code here: cambia el toolTip
         temporadaList.setToolTipText(gettoolTip());
     }//GEN-LAST:event_temporadaListMouseEntered
+
+    private void EditarF1CMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EditarF1CMenuItemActionPerformed
+        // TODO add your handling code here: selecciona y carga los datos de F1 challenge
+        loadDirectory("F1 Challenge 99-02","\\SeasonData\\","*.gdb");
+    }//GEN-LAST:event_EditarF1CMenuItemActionPerformed
 //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Metodos de la clase">
+    //Muestra un cuadro de dialogo para elegir el directorio del juego y luego lo carga
+    private void loadDirectory(String folderName, String optionsFolder, String regexFormat) {
+        JFileChooser ubicacion = new JFileChooser();
+        ubicacion.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int seleccion = ubicacion.showOpenDialog(null);
+
+        if (seleccion == JFileChooser.APPROVE_OPTION) {
+            File archivo = ubicacion.getSelectedFile();
+            ruta = archivo.getAbsolutePath();
+
+            if (archivo.getName().contains(folderName)) {
+                buscarDirectorio(ruta + optionsFolder, crearRegex(regexFormat), false, true);
+                temporadaList.removeAllItems();
+
+                for (int i = 0; i < categorias.size(); i++) {
+                    temporadaList.addItem(categorias.get(i).getName());
+                }
+                temporadaList.setEnabled(true);
+                cargarTemporadajButton.setEnabled(true);
+            } else {
+                ImageIcon icon = new ImageIcon(getClass().getResource("Elementos/Imagenes/PitStopErrorIcon.png"));
+                JOptionPane.showMessageDialog(null, "La ruta especificada no es valida." + '\n' + "Seleccione la ruta del directorio",
+                        "PitsStop Maker 2.7.5 - ERROR", JOptionPane.ERROR_MESSAGE, icon);
+            }
+        }
+    }
     private void trackListGenerator(Object[] inpista) {
         //Recibe un arreglo y crea una lista de pistas vacias y su archivo .gdb
         tracksList.clear();
@@ -582,7 +606,7 @@ public class PitStopMaker extends javax.swing.JFrame {
 
         if (pistasList.isEnabled()) {
             for (int indicePista : pistasList.getSelectedIndices()) {
-                esena.add(temporadas.getScenes().get(indicePista));
+                esena.add(this.temporadas.getScenes().get(indicePista));
             }
         } else {
             for (int i = 0; i < temporadas.getScenes().size(); i++) {
@@ -639,13 +663,13 @@ public class PitStopMaker extends javax.swing.JFrame {
         }
     }
 
-    public void leerArchivoRfm(String rutaarch) {
-        int lectura = 0; //variable para evitar comprobaciones innecesarias en el switch.
+    public void leerArchivoRfm(String rutaarch, boolean isF1C ) {
+        int lectura = isF1C==true?3:0; //variable para evitar comprobaciones innecesarias en el switch.
         File f = new File(rutaarch);
         try {
             Scanner s;
             s = new Scanner(f);
-            while (s.hasNextLine()) {
+            while (s.hasNextLine()&&lectura <=6) {
                 String linea = s.nextLine();
                 switch (lectura)//<editor-fold defaultstate="collapsed" desc="lectura de archivo">
                 {
@@ -660,7 +684,7 @@ public class PitStopMaker extends javax.swing.JFrame {
                         break;
                     case 1:
                         if (linea.trim().startsWith("VehiclesDir") || linea.trim().startsWith("//VehiclesDir")) {
-                            String[] lineaf = linea.split("="); // se busca el filtro para la pista y deja solo el filtro.
+                            String[] lineaf = linea.split("="); //  deja solo el filtro.
                             if (lineaf.length == 2) {
                                 temporadas.setVehiclesDir(lineaf[1].trim());// ruta de vehiculos guardado
                                 lectura++;
@@ -669,19 +693,19 @@ public class PitStopMaker extends javax.swing.JFrame {
                         break;
                     case 2:
                         if (linea.trim().contains("DriversDir") || linea.trim().startsWith("//DriversDir")) {
-                            String[] lineaf = linea.split("="); // se busca el filtro para la pista y deja solo el filtro.
+                            String[] lineaf = linea.split("="); //deja solo el filtro.
                             if (lineaf.length == 2) {
-                                temporadas.setDriversDir(lineaf[1].trim());// ruta de vehiculos guardado
+                                temporadas.setDriversDir(lineaf[1].trim());// ruta de pilotos guardado
                                 lectura++;
                             }
                         }
                         break;
                     case 3:
-                        if (linea.trim().startsWith("Vehicle Filter")) {
+                        if (linea.trim().startsWith("Vehicle Filter")||linea.trim().startsWith("Game Filter")) {
                             String[] lineaf = linea.split("="); // se deja solo el filtro
-                            if (lineaf[1].trim().contains("|")) {
+                            if (lineaf[1].trim().contains("|")||lineaf[1].trim().contains("AND:")) {
                                 linea = lineaf[1].substring(1);
-                                temporadas.setVehFilter(lineaf[1].trim()); // filtro guardado
+                                temporadas.setVehFilter(linea); // filtro guardado
                             } else {
                                 temporadas.setVehFilter(lineaf[1].trim());
                             } // filtro guardado
@@ -711,17 +735,18 @@ public class PitStopMaker extends javax.swing.JFrame {
             s.close();
         } catch (FileNotFoundException e) {
             ImageIcon icon = new ImageIcon(getClass().getResource("Elementos/Imagenes/PitStopErrorIcon.png"));
-            JOptionPane.showMessageDialog(this, "Error Archivo no encontrado", "PitStop Maker 2.7.0 - Error", JOptionPane.ERROR_MESSAGE, icon);
+            JOptionPane.showMessageDialog(this, "Error Archivo no encontrado", "PitStop Maker 2.7.5 - Error", JOptionPane.ERROR_MESSAGE, icon);
         }
     }
-
+    
+// lee el archivo rfm o gbd para guardar las rutas y los nombres de las temporadas
     public void leerArchivoRfm(File f) {
         try {
             Scanner s;
             s = new Scanner(f);
             while (s.hasNextLine()) {
                 String linea = s.nextLine();
-                if (linea.trim().startsWith("FullSeasonName")) {
+                if (linea.trim().startsWith("FullSeasonName") ||linea.trim().startsWith("Game Name")) {
                     Categoria cat = new Categoria();
                     cat.setRuta(f.toString());
                     String[] lineaf = linea.split("=");
@@ -729,12 +754,13 @@ public class PitStopMaker extends javax.swing.JFrame {
                         cat.setName(lineaf[1].trim());
                         categorias.add(cat);
                     }
+                    else{break;}
                 }
             }
             s.close();
         } catch (FileNotFoundException e) {
             ImageIcon icon = new ImageIcon(getClass().getResource("Elementos/Imagenes/PitStopErrorIcon.png"));
-            JOptionPane.showMessageDialog(null, "Error Archivo no encontrado", "PitStop Maker 2.7.0 - Error", JOptionPane.ERROR_MESSAGE, icon);
+            JOptionPane.showMessageDialog(null, "Error Archivo no encontrado", "PitStop Maker 2.7.5 - Error", JOptionPane.ERROR_MESSAGE, icon);
         }
     }
 
@@ -803,9 +829,10 @@ public class PitStopMaker extends javax.swing.JFrame {
             }
         } catch (FileNotFoundException e) {
             ImageIcon icon = new ImageIcon(getClass().getResource("Elementos/Imagenes/PitStopErrorIcon.png"));
-            JOptionPane.showMessageDialog(null, "Error Archivo no encontrado", "PitStop Maker 2.7.0 - Error", JOptionPane.ERROR_MESSAGE, icon);
+            JOptionPane.showMessageDialog(null, "Error Archivo no encontrado", "PitStop Maker 2.7.5 - Error", JOptionPane.ERROR_MESSAGE, icon);
         }
     }
+    
     //</editor-fold>
 
     public static void main(String args[]) {
@@ -843,6 +870,7 @@ public class PitStopMaker extends javax.swing.JFrame {
     }
     //<editor-fold defaultstate="collapsed" desc="Varieable declaration">
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem EditarF1CMenuItem;
     private javax.swing.JMenuItem EditarRfactorMenuItem;
     private javax.swing.JCheckBox allTracksCheckBox;
     private javax.swing.JButton cargarTemporadajButton;
